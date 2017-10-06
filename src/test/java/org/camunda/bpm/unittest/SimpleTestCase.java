@@ -12,6 +12,8 @@
  */
 package org.camunda.bpm.unittest;
 
+import org.camunda.bpm.engine.runtime.Execution;
+import org.camunda.bpm.engine.runtime.MessageCorrelationResult;
 import org.camunda.bpm.engine.runtime.ProcessInstance;
 import org.camunda.bpm.engine.test.Deployment;
 import org.camunda.bpm.engine.test.ProcessEngineRule;
@@ -20,6 +22,10 @@ import static org.camunda.bpm.engine.test.assertions.ProcessEngineTests.*;
 
 import org.junit.Rule;
 import org.junit.Test;
+
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 /**
  * @author Daniel Meyer
@@ -35,17 +41,93 @@ public class SimpleTestCase {
   public void shouldExecuteProcess() {
     // Given we create a new process instance
     ProcessInstance processInstance = runtimeService().startProcessInstanceByKey("testProcess");
-    // Then it should be active
-    assertThat(processInstance).isActive();
-    // And it should be the only instance
-    assertThat(processInstanceQuery().count()).isEqualTo(1);
-    // And there should exist just a single task within that process instance
-    assertThat(task(processInstance)).isNotNull();
 
-    // When we complete that task
-    complete(task(processInstance));
-    // Then the process instance should be ended
-    assertThat(processInstance).isEnded();
+    List<Execution> messagesShipping = executionQuery().messageEventSubscriptionName("Message_shipping").list();
+    int count = 0;
+    while (!messagesShipping.isEmpty()) {
+      Map<String, Object> variables = new HashMap<String, Object>();
+      if (count++ == 12) {
+        System.out.println("launch ship good compensation");
+        variables.put("success", false);
+      } else {
+        variables.put("success", true);
+      }
+
+      runtimeService().messageEventReceived("Message_shipping", messagesShipping.get(0).getId(), variables);
+      messagesShipping = executionQuery().messageEventSubscriptionName("Message_shipping").list();
+    }
   }
 
+  @Test
+  @Deployment(resources = {"testProcess2.bpmn"})
+  public void shouldExecuteProcess2() {
+    // Given we create a new process instance
+    ProcessInstance processInstance = runtimeService().startProcessInstanceByKey("testProcess2");
+
+    List<Execution> messagesShipping = executionQuery().processInstanceId(processInstance.getId()).messageEventSubscriptionName("Message_shipping").active().list();
+    int count = 0;
+    while (!messagesShipping.isEmpty()) {
+      Map<String, Object> variables = new HashMap<String, Object>();
+      if (count++ == 25) {
+        System.out.println("launch ship good compensation");
+        variables.put("success", false);
+      } else {
+        variables.put("success", true);
+      }
+
+      runtimeService().messageEventReceived("Message_shipping", messagesShipping.get(0).getId(), variables);
+      messagesShipping = executionQuery().messageEventSubscriptionName("Message_shipping").list();
+    }
+  }
+
+  @Test
+  @Deployment(resources = {"testProcess3.bpmn"})
+  public void shouldExecuteProcess3() {
+    // Given we create a new process instance
+    ProcessInstance processInstance = runtimeService().startProcessInstanceByKey("testProcess3");
+
+    List<Execution> messagesShipping = getExecutions(processInstance);
+    for (int i = 0; i < messagesShipping.size(); i++) {
+      Map<String, Object> variables = new HashMap<String, Object>();
+//      if (count++ == 2) {
+//        MessageCorrelationResult compensateAll = runtimeService().createMessageCorrelation("CompensateAll").processInstanceId(processInstance.getId()).correlateWithResult();
+//        System.out.println("==== "+compensateAll.getResultType().name());
+//      } else {
+//        runtimeService().messageEventReceived("Message_shipping", messagesShipping.get(0).getId(), variables);
+//      }
+      runtimeService().messageEventReceived("Message_shipping", messagesShipping.get(i).getId(), variables);
+
+      messagesShipping = getExecutions(processInstance);
+    }
+
+    System.out.println("--=> start compensation...");
+    MessageCorrelationResult compensateAll = runtimeService().createMessageCorrelation("CompensateAll").processInstanceId(processInstance.getId()).correlateWithResult();
+    System.out.println("--=> "+compensateAll.getResultType().name());
+  }
+
+  @Test
+  @Deployment(resources = {"testProcess4.bpmn"})
+  public void shouldExecuteProcess4() {
+    ProcessInstance processInstance = runtimeService().startProcessInstanceByKey("testProcess4");
+
+    List<Execution> messagesShipping = getExecutions(processInstance); // cardinality is 5 for the subprocess
+    for (int i = 0; i < messagesShipping.size(); i++) {
+      Map<String, Object> variables = new HashMap<String, Object>();
+      if (i == 3) { // set i == 30 to avoid sub process signal and go to the global compensation
+        System.out.println("-------------------");
+        System.out.println("(back-end) send step 2 ship good compensation !!!!");
+        System.out.println("-------------------");
+        variables.put("success", false);
+      } else {
+        variables.put("success", true);
+      }
+      // compensate received message added programmatically by SmartShipGoodService
+      // some message sending can failed due to sub process signal launch and the compensation already append
+      runtimeService().messageEventReceived("Message_shipping", messagesShipping.get(i).getId(), variables);
+    }
+  }
+
+  private List<Execution> getExecutions(ProcessInstance processInstance) {
+    return executionQuery().processInstanceId(processInstance.getId()).messageEventSubscriptionName("Message_shipping").list();
+  }
 }

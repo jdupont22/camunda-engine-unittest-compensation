@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<bpmn2:definitions xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:bpmn2="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" xmlns:camunda="http://camunda.org/schema/1.0/bpmn" id="_7FrToMrfEeOyYYI9xhG4Cw" targetNamespace="http://camunda.org/schema/1.0/bpmn" exporter="Camunda Modeler" exporterVersion="1.9.0" xsi:schemaLocation="http://www.omg.org/spec/BPMN/20100524/MODEL BPMN20.xsd">
-  <bpmn2:process id="testProcess" isExecutable="true">
+<bpmn2:definitions xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:bpmn2="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" xmlns:camunda="http://camunda.org/schema/1.0/bpmn" id="_7FrToMrfEeOyYYI9xhG4Cw" targetNamespace="http://camunda.org/schema/1.0/bpmn" exporter="Camunda Modeler" exporterVersion="1.11.0-dev" xsi:schemaLocation="http://www.omg.org/spec/BPMN/20100524/MODEL BPMN20.xsd">
+  <bpmn2:process id="testProcess2" isExecutable="true">
     <bpmn2:startEvent id="StartEvent_1">
       <bpmn2:outgoing>SequenceFlow_1</bpmn2:outgoing>
     </bpmn2:startEvent>
@@ -36,14 +36,10 @@
       </bpmn2:scriptTask>
       <bpmn2:scriptTask id="Second_Step_Log_Compensation_01fw92c" name="Second Step Log Compensation" isForCompensation="true" scriptFormat="groovy">      <bpmn2:script><![CDATA[println "(second step) => log compensation n°" + execution.getVariable('loopCounter');]]></bpmn2:script>
 </bpmn2:scriptTask>
-      <bpmn2:serviceTask id="Task_Ship_Goods_1uz43io" name="Ship Goods" camunda:class="org.camunda.bpm.unittest.ShipGoodService">
+      <bpmn2:serviceTask id="Task_Ship_Goods_1uz43io" name="Ship Goods" camunda:class="org.camunda.bpm.unittest.SmartShipGoodService">
         <bpmn2:incoming>SequenceFlow_08qqtgu</bpmn2:incoming>
         <bpmn2:outgoing>SequenceFlow_1x8ijp7</bpmn2:outgoing>
       </bpmn2:serviceTask>
-      <bpmn2:receiveTask id="Task_10peqr6" name="waitForShipping" messageRef="Message_1azlyrd">
-        <bpmn2:incoming>SequenceFlow_1x8ijp7</bpmn2:incoming>
-        <bpmn2:outgoing>SequenceFlow_1whud8r</bpmn2:outgoing>
-      </bpmn2:receiveTask>
       <bpmn2:scriptTask id="Task_Ship_Goods_Compensation_0rqv9pd" name="Second Step Ship Compensation" isForCompensation="true" scriptFormat="groovy">      <bpmn2:script><![CDATA[println "(second step) => ship compensation n°" + execution.getVariable('loopCounter');]]></bpmn2:script>
 </bpmn2:scriptTask>
       <bpmn2:endEvent id="EndEvent_1obk0ol">
@@ -62,8 +58,7 @@
       </bpmn2:boundaryEvent>
       <bpmn2:sequenceFlow id="SequenceFlow_0m6g3n4" sourceRef="StartEvent_09kn1we" targetRef="Task_Second_Step_Log_11ye6iy" />
       <bpmn2:sequenceFlow id="SequenceFlow_08qqtgu" sourceRef="Task_Second_Step_Log_11ye6iy" targetRef="Task_Ship_Goods_1uz43io" />
-      <bpmn2:sequenceFlow id="SequenceFlow_1x8ijp7" sourceRef="Task_Ship_Goods_1uz43io" targetRef="Task_10peqr6" />
-      <bpmn2:sequenceFlow id="SequenceFlow_1whud8r" sourceRef="Task_10peqr6" targetRef="Task_1pk9jz8" />
+      <bpmn2:sequenceFlow id="SequenceFlow_1x8ijp7" sourceRef="Task_Ship_Goods_1uz43io" targetRef="Task_1pk9jz8" />
       <bpmn2:sequenceFlow id="SequenceFlow_1hqlty3" name="success" sourceRef="ExclusiveGateway_05e9h27" targetRef="EndEvent_1obk0ol">
         <bpmn2:conditionExpression xsi:type="bpmn2:tFormalExpression">${success}</bpmn2:conditionExpression>
       </bpmn2:sequenceFlow>
@@ -102,9 +97,9 @@
       </bpmn2:endEvent>
       <bpmn2:sequenceFlow id="SequenceFlow_14kxwzo" sourceRef="Task_1pk9jz8" targetRef="ExclusiveGateway_05e9h27" />
       <bpmn2:scriptTask id="Task_1pk9jz8" name="Log" scriptFormat="groovy">
-        <bpmn2:incoming>SequenceFlow_1whud8r</bpmn2:incoming>
+        <bpmn2:incoming>SequenceFlow_1x8ijp7</bpmn2:incoming>
         <bpmn2:outgoing>SequenceFlow_14kxwzo</bpmn2:outgoing>
-        <bpmn2:script><![CDATA[println "(second step) => after received task n°" + execution.getVariable('loopCounter');]]></bpmn2:script>
+        <bpmn2:script><![CDATA[println "(second step) => after received task with success:"+ execution.getVariable('success') +" for n°" + execution.getVariable('loopCounter');]]></bpmn2:script>
       </bpmn2:scriptTask>
       <bpmn2:association id="Association_1raq0rp" associationDirection="One" sourceRef="BoundaryEvent_19ckow1" targetRef="Second_Step_Log_Compensation_01fw92c" />
       <bpmn2:association id="Association_08ty2sl" associationDirection="One" sourceRef="BoundaryEvent_0hm2783" targetRef="Task_Ship_Goods_Compensation_0rqv9pd" />
@@ -152,7 +147,7 @@
   <bpmn2:message id="Message_1azlyrd" name="Message_shipping" />
   <bpmn2:error id="Error_1gzlonz" name="Error_37urmip" errorCode="100" />
   <bpmndi:BPMNDiagram id="BPMNDiagram_1">
-    <bpmndi:BPMNPlane id="BPMNPlane_1" bpmnElement="testProcess">
+    <bpmndi:BPMNPlane id="BPMNPlane_1" bpmnElement="testProcess2">
       <bpmndi:BPMNShape id="_BPMNShape_StartEvent_3" bpmnElement="StartEvent_1">
         <dc:Bounds x="111" y="204" width="36" height="36" />
         <bpmndi:BPMNLabel>
@@ -227,9 +222,9 @@
       </bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge id="SequenceFlow_1x8ijp7_di" bpmnElement="SequenceFlow_1x8ijp7">
         <di:waypoint xsi:type="dc:Point" x="675" y="83" />
-        <di:waypoint xsi:type="dc:Point" x="707" y="83" />
+        <di:waypoint xsi:type="dc:Point" x="857" y="83" />
         <bpmndi:BPMNLabel>
-          <dc:Bounds x="691" y="62" width="0" height="12" />
+          <dc:Bounds x="721" y="62" width="90" height="12" />
         </bpmndi:BPMNLabel>
       </bpmndi:BPMNEdge>
       <bpmndi:BPMNShape id="EndEvent_1obk0ol_di" bpmnElement="EndEvent_1obk0ol">
@@ -238,13 +233,6 @@
           <dc:Bounds x="1180" y="105" width="0" height="12" />
         </bpmndi:BPMNLabel>
       </bpmndi:BPMNShape>
-      <bpmndi:BPMNEdge id="SequenceFlow_1whud8r_di" bpmnElement="SequenceFlow_1whud8r">
-        <di:waypoint xsi:type="dc:Point" x="807" y="83" />
-        <di:waypoint xsi:type="dc:Point" x="857" y="83" />
-        <bpmndi:BPMNLabel>
-          <dc:Bounds x="832" y="62" width="0" height="12" />
-        </bpmndi:BPMNLabel>
-      </bpmndi:BPMNEdge>
       <bpmndi:BPMNShape id="BoundaryEvent_0qezcxb_di" bpmnElement="BoundaryEvent_19ckow1">
         <dc:Bounds x="465" y="105" width="36" height="36" />
         <bpmndi:BPMNLabel>
@@ -260,9 +248,6 @@
       </bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="ServiceTask_1rro8p1_di" bpmnElement="Task_Ship_Goods_1uz43io">
         <dc:Bounds x="575" y="43" width="100" height="80" />
-      </bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="ReceiveTask_18l8jvk_di" bpmnElement="Task_10peqr6">
-        <dc:Bounds x="707" y="43" width="100" height="80" />
       </bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="BoundaryEvent_1m0rf6l_di" bpmnElement="BoundaryEvent_0hm2783">
         <dc:Bounds x="603" y="105" width="36" height="36" />
